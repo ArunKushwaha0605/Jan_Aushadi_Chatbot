@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+# from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
@@ -43,7 +44,7 @@ def initialize_medical_rag():
     # Vector store
     vectorstore = Chroma.from_documents(
         documents=valid_splits, 
-        embedding=GoogleGenerativeAIEmbeddings(model='gemini-embedding-2')
+        embedding = OpenAIEmbeddings(model="text-embedding-3-small")
         )
     retriever = vectorstore.as_retriever(
         search_type="similarity",
@@ -76,12 +77,13 @@ def initialize_medical_rag():
     # System instructions
     system_prompt = (
        "Role: Medical Catalog Assistant.\n"
-    "Task: Extract details from retrieved context. Format: [Sr.no][Code][Name/Strength][Pack][Price].\n"
+       "The Table in the PDF is in Format: [Sr.no][Drug Code][Generic Name/Strength][Unit Size][MRP (in Rs.)].\n"
+    "Task: Extract details from retrieved context. Format: Drug code - [Code], Name -[Generic Name/Strength], Pack-[Unit Size], Price- [MRP (in Rs.)].\n"
     "Rules:\n"
     "- Strictly use context for drug info. NEVER hallucinate drug data.\n"
     "- Keep answers concise and structured.\n"
-    "- Use external knowledge ONLY for terminology, symptoms, or diseases.\n"
-    "- Only recommend OTC medicines present in the document.\n"
+    "- Use external knowledge ONLY for uses, direction of use, terminology, symptoms, or diseases.\n"
+    "- Only recommend Over The Counter (OTC) medicines present in the document.\n"
     "- If symptoms require expert attention, advise consulting a doctor.\n"
     "- If medicine is missing, say 'I don't know'.\n"
     "- Output: Generic Name, Drug Code, Price/unit, MRP.\n"
